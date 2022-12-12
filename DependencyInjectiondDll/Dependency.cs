@@ -1,6 +1,8 @@
-﻿using System;
+﻿using DependencyInjectionDll;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -9,38 +11,49 @@ namespace DependencyInjectiondDll
     public class Dependency
     {
         public Type dependencyType { get; }
-        private Dictionary<Type, object?> singletonImplementations;
-        public bool isSingleton;
+        private List<ImplementationType> _implementations;
+        private Dictionary<int, ImplementationType> _namedDepencies;
         public Dependency(Type dependencyType) 
         {
+            this._namedDepencies = new Dictionary<int, ImplementationType>();
             this.dependencyType = dependencyType;
-            singletonImplementations = new Dictionary<Type, object?>();
+            _implementations = new List<ImplementationType>();
         }
-        public bool ContainsImplementations(Type implementationType)
+        public IEnumerable<ImplementationType>? GetImplementationTypes(Type implementationType)
         {
-            return singletonImplementations.ContainsKey(implementationType);
+            var implementations = from implementation in _implementations
+                       where implementation.implementationType == implementationType
+                       select implementation;
+            return implementations;
         }
-        public void AddImplementationType(Type implementationType)
+        public void AddImplementationType(Type implementationType, bool isSingleton)
         {
-            if(!singletonImplementations.ContainsKey(implementationType))
+            ImplementationType implementation = new ImplementationType(implementationType, isSingleton);
+            if(!_implementations.Contains(implementation, ImplementationType.equalityComparer))
             {
-                singletonImplementations.Add(implementationType, null);
+                _implementations.Add(implementation);
+            }
+        }
+        public void AddNamedDependency(int namedDependcyNum, Type implementationType, bool isSingleton)
+        {
+            ImplementationType implementation = new ImplementationType(implementationType, isSingleton);
+            if(!_namedDepencies.ContainsKey(namedDependcyNum))
+            {
+                _namedDepencies.Add(namedDependcyNum, implementation);
+            }
+            else
+            {
+                _namedDepencies[namedDependcyNum] = implementation;
             }
         }
         public void AddImplementation(Type implementationType, object implementation)
         {
-            if(singletonImplementations.ContainsKey(implementationType))
-            {
-                singletonImplementations[implementationType] = implementation;
-            }
         }
         public object? GetImplementationObject(Type implementationType)
         {
-            object? result = null;
-            if(singletonImplementations.ContainsKey(implementationType))
-            {
-                result = singletonImplementations[implementationType];
-            }
+            object? result = from implementation in _implementations
+                             where implementation.implementationType == implementationType
+                             select implementation.implementationObject;
             return result;
         }
     }
