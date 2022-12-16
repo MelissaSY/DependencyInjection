@@ -11,27 +11,29 @@ namespace DependencyInjectiondDll
     public class Dependency
     {
         public Type dependencyType { get; }
-        private List<ImplementationType> _implementations;
+        private Dictionary<Type, ImplementationType> _implementations;
         private Dictionary<int, ImplementationType> _namedDepencies;
         public Dependency(Type dependencyType) 
         {
             this._namedDepencies = new Dictionary<int, ImplementationType>();
             this.dependencyType = dependencyType;
-            _implementations = new List<ImplementationType>();
+            _implementations = new Dictionary<Type, ImplementationType>();
         }
-        public IEnumerable<ImplementationType>? GetImplementationTypes(Type implementationType)
+        private ImplementationType? GetImplementation(Type implementationType)
         {
-            var implementations = from implementation in _implementations
-                       where implementation.implementationType == implementationType
-                       select implementation;
-            return implementations;
+            ImplementationType? implementation = null;
+            if (_implementations.ContainsKey(implementationType))
+            {
+                implementation = _implementations[implementationType];
+            }
+            return implementation;
         }
         public void AddImplementationType(Type implementationType, bool isSingleton)
         {
             ImplementationType implementation = new ImplementationType(implementationType, isSingleton);
-            if(!_implementations.Contains(implementation, ImplementationType.equalityComparer))
+            if(!_implementations.ContainsKey(implementationType))
             {
-                _implementations.Add(implementation);
+                _implementations.Add(implementationType, implementation);
             }
         }
         public void AddNamedDependency(int namedDependcyNum, Type implementationType, bool isSingleton)
@@ -46,15 +48,35 @@ namespace DependencyInjectiondDll
                 _namedDepencies[namedDependcyNum] = implementation;
             }
         }
-        public void AddImplementation(Type implementationType, object implementation)
+        public void AddImplementationObject(Type implementationType, object implementationObject)
         {
+            var implementation = GetImplementation(implementationType);
+            if(implementation!= null)
+            {
+                implementation.implementationObject = implementationObject;
+            }
         }
         public object? GetImplementationObject(Type implementationType)
         {
-            object? result = from implementation in _implementations
-                             where implementation.implementationType == implementationType
-                             select implementation.implementationObject;
+            object? result = null;
+            if(_implementations.ContainsKey(implementationType))
+            {
+                result = _implementations[implementationType];
+            }
             return result;
+        }
+        public Type GetImplentationFirstType()
+        {
+            return _implementations.Values.First().implementationType;
+        }
+        public IEnumerable<Type> GetAllImplentationTypes()
+        {
+            IEnumerable<Type> implementationTypes = new List<Type>();
+            foreach(ImplementationType implementationType in _implementations.Values)
+            {
+                implementationTypes = implementationTypes.Append(implementationType.implementationType);
+            }
+            return implementationTypes;
         }
     }
 }

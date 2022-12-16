@@ -6,7 +6,13 @@ using System.Threading.Tasks;
 
 namespace DependencyInjectionTests
 {
-    public interface IService
+    enum ServiceImplementations
+    {
+        First,
+        Second
+    }
+    public interface IService<TRepository>
+        where TRepository : IRepository
     { }
     public interface IRepository
     { }
@@ -14,15 +20,22 @@ namespace DependencyInjectionTests
     {
         public Repository() { }
     }
-    public class ServiceImpl : IService
+    public class MySqlRepository : IRepository
     {
-        public ServiceImpl(IRepository repository) { }
+        public MySqlRepository() { }
     }
-    public class ServiceImpl1 : IService
-    {  }
-    public class ServiceImpl2<TRepository>
+    public class ServiceImpl<TRepository> : IService<TRepository>
         where TRepository : IRepository
     {
-        public ServiceImpl2(TRepository repository) { }
+        public ServiceImpl(TRepository repository) { }
     }
+    public class ServiceImpl1 : IService1
+    {  }
+    public class ServiceImpl2 : IService1
+    {  }
+    public interface IService1 { }
+    public abstract class AbstractService2 { }
+    public class Service1 : IService1 { };
+    public class Service2 : AbstractService2 { };
+    public class Service3 { }
 }

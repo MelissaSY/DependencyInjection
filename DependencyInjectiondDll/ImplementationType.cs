@@ -1,20 +1,35 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace DependencyInjectionDll
+﻿namespace DependencyInjectionDll
 {
     public class ImplementationType
     {
-        public readonly static IEqualityComparer<ImplementationType> equalityComparer = new ImplementationTypeComparer();
         public Type implementationType { get; }
-        public object? implementationObject;
-        public bool isSingleton;
+        private object _lock;
+        private object? _implementationObject;
+        public object? implementationObject
+        {
+            get 
+            { 
+                return _implementationObject; 
+            }
+            set
+            {
+                if (_implementationObject == null)
+                {
+                    lock (_lock)
+                    {
+                        if (_implementationObject == null)
+                        {
+                            _implementationObject = value;
+                        }
+                    }
+                }
+            }
+        }
+        public bool isSingleton { get; }
         public ImplementationType(Type implementationType, bool isSingleton)
         {
             this.implementationType = implementationType;
+            this._lock = new object();
             this.implementationObject = null;
             this.isSingleton = isSingleton;
         }
