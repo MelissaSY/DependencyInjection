@@ -12,10 +12,10 @@ namespace DependencyInjectiondDll
     {
         public Type dependencyType { get; }
         private Dictionary<Type, ImplementationType> _implementations;
-        private Dictionary<int, ImplementationType> _namedDepencies;
+        private Dictionary<object, ImplementationType> _namedDepencies;
         public Dependency(Type dependencyType) 
         {
-            this._namedDepencies = new Dictionary<int, ImplementationType>();
+            this._namedDepencies = new Dictionary<object, ImplementationType>();
             this.dependencyType = dependencyType;
             _implementations = new Dictionary<Type, ImplementationType>();
         }
@@ -36,7 +36,7 @@ namespace DependencyInjectiondDll
                 _implementations.Add(implementationType, implementation);
             }
         }
-        public void AddNamedDependency(int namedDependcyNum, Type implementationType, bool isSingleton)
+        public void AddNamedDependency(object namedDependcyNum, Type implementationType, bool isSingleton)
         {
             ImplementationType implementation = new ImplementationType(implementationType, isSingleton);
             if(!_namedDepencies.ContainsKey(namedDependcyNum))
@@ -77,6 +77,15 @@ namespace DependencyInjectiondDll
                 implementationTypes = implementationTypes.Append(implementationType.implementationType);
             }
             return implementationTypes;
+        }
+        public Type? GetNamedDependencyType(object namedDependency)
+        {
+            Type? implementationType = null;
+            if(_namedDepencies.ContainsKey(namedDependency))
+            {
+                implementationType = _namedDepencies[namedDependency].implementationType;
+            }
+            return implementationType;
         }
     }
 }

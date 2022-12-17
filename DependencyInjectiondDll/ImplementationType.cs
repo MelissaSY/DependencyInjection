@@ -5,6 +5,7 @@
         public Type implementationType { get; }
         private object _lock;
         private object? _implementationObject;
+        public object? namedDependency { get; }
         public object? implementationObject
         {
             get 
@@ -26,12 +27,13 @@
             }
         }
         public bool isSingleton { get; }
-        public ImplementationType(Type implementationType, bool isSingleton)
+        public ImplementationType(Type implementationType, bool isSingleton, object? named = null)
         {
             this.implementationType = implementationType;
             this._lock = new object();
             this.implementationObject = null;
             this.isSingleton = isSingleton;
+            this.namedDependency = named;
         }
     }
 }

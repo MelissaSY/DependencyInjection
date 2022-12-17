@@ -19,7 +19,7 @@ namespace DependencyInjectiondDll
         {
             Register(typeof(T), typeof(K), isSingleton);
         }
-        public void Register<T, K>(int namedDependency, bool isSingleton = false)
+        public void Register<T, K>(object namedDependency, bool isSingleton = false)
             where K : T
         {
             Register(typeof(T), typeof(K), namedDependency, isSingleton);
@@ -35,7 +35,7 @@ namespace DependencyInjectiondDll
                 _dependencies[dependencyType].AddImplementationType(implementationType, isSingleton);
             }
         }
-        public void Register(Type dependencyType, Type implementationType, int namedDependency, bool isSingleton = false)
+        public void Register(Type dependencyType, Type implementationType, object namedDependency, bool isSingleton = false)
         {
             if (dependencyType.IsAssignableFrom(implementationType))
             {
@@ -45,6 +45,15 @@ namespace DependencyInjectiondDll
                 }
                 _dependencies[dependencyType].AddNamedDependency(namedDependency, implementationType, isSingleton);
             }
+        }
+        public Type? GetNamedDependency(Type dependencyType, object namedDependency)
+        {
+            Type? implementationType = null;
+            if(_dependencies.ContainsKey(dependencyType))
+            {
+                implementationType = _dependencies[dependencyType].GetNamedDependencyType(namedDependency);
+            }
+            return implementationType;
         }
         public Type? GetDependencyType(Type dependencyType)
         { 

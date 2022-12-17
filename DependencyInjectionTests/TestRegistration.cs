@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -64,7 +65,16 @@ namespace DependencyInjectionTests
         [Test]
         public void AddNamedDependencies_Test()
         {
+            _dependencies.Register<IService1, ServiceImpl1>(ServiceImplementations.First);
+            _dependencies.Register<IService1, ServiceImpl2>(ServiceImplementations.Second);
 
+            Type? fisrtImpl = _dependencies.GetNamedDependency(typeof(IService1), ServiceImplementations.First);
+            Type? secondImpl = _dependencies.GetNamedDependency(typeof(IService1), ServiceImplementations.Second);
+
+            Assert.That(fisrtImpl, Is.Not.Null);
+            Assert.That(secondImpl, Is.Not.Null);
+            Assert.That(fisrtImpl, Is.EqualTo(typeof(ServiceImpl1)));
+            Assert.That(secondImpl, Is.EqualTo(typeof(ServiceImpl2)));
         }
     }
 }

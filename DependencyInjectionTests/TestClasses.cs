@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace DependencyInjectionTests
 {
-    enum ServiceImplementations
+    public enum ServiceImplementations
     {
         First,
         Second
