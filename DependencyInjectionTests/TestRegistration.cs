@@ -76,5 +76,13 @@ namespace DependencyInjectionTests
             Assert.That(fisrtImpl, Is.EqualTo(typeof(ServiceImpl1)));
             Assert.That(secondImpl, Is.EqualTo(typeof(ServiceImpl2)));
         }
+        public void AddSingleton_Test()
+        {
+            _dependencies.Register<IService1, ServiceImpl1>(true);
+
+            bool isSingleton = _dependencies.ImplementationIsSingleton(typeof(IService1), typeof(ServiceImpl1));
+
+            Assert.That(isSingleton, Is.True);
+        }
     }
 }

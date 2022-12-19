@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DependencyInjectiondDll
+namespace DependencyInjectionDll
 {
     public class Dependency
     {
@@ -47,6 +47,7 @@ namespace DependencyInjectiondDll
             {
                 _namedDepencies[namedDependcyNum] = implementation;
             }
+            AddImplementationType(implementationType, isSingleton);
         }
         public void AddImplementationObject(Type implementationType, object implementationObject)
         {
@@ -65,9 +66,16 @@ namespace DependencyInjectiondDll
             }
             return result;
         }
-        public Type GetImplentationFirstType()
+        public Type? GetImplentationFirstType(object? namedDependency = null)
         {
-            return _implementations.Values.First().implementationType;
+            if(namedDependency == null)
+            {
+                return _implementations.Values.First().implementationType;
+            }
+            else
+            {
+                return GetNamedDependencyType(namedDependency);
+            }
         }
         public IEnumerable<Type> GetAllImplentationTypes()
         {
@@ -86,6 +94,18 @@ namespace DependencyInjectiondDll
                 implementationType = _namedDepencies[namedDependency].implementationType;
             }
             return implementationType;
+        }
+        public bool ImplementationIsSingleton(Type implementationType)
+        {
+            ImplementationType? implementation = GetImplementation(implementationType);
+            if( implementation == null) return false;
+            return implementation.isSingleton;
+        }
+        public void SetImplementationObject(Type implementationType, object implementationObject)
+        {
+            ImplementationType? implementation = GetImplementation(implementationType);
+            if( implementation == null) return;
+            implementation.implementationObject = implementationObject;
         }
     }
 }

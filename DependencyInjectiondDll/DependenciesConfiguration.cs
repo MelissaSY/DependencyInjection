@@ -2,10 +2,11 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DependencyInjectiondDll
+namespace DependencyInjectionDll
 {
     public class DependenciesConfiguration
     {
@@ -63,12 +64,57 @@ namespace DependencyInjectiondDll
             }
             return _dependencies[dependencyType].dependencyType;
         }
-        public Type? GetFirstImplementation(Type type)
+        public Type? GetFirstImplementation(Type type, object? namedDependency = null)
         {
             Type? implementationType = null;
             if(_dependencies.ContainsKey(type))
             {
-                implementationType = _dependencies[type].GetImplentationFirstType();
+                implementationType = _dependencies[type].GetImplentationFirstType(namedDependency);
+            } 
+            else
+            {
+                var dependencies = _dependencies.Keys.ToArray();
+                var dependecyType = (from dependency in dependencies
+                                     where type.IsAssignableFrom(dependency)
+                                     select dependency);
+                if(dependecyType != null && dependecyType.Any())
+                {
+                    implementationType = _dependencies[dependecyType.First()].GetImplentationFirstType(namedDependency);
+                }
+                else if(type.IsGenericType)
+                {
+                    if(!type.IsGenericTypeDefinition)
+                    {
+                        var parameters = type.GetGenericArguments();
+                        type = type.GetGenericTypeDefinition();
+                        implementationType = TrySearchDependency(type, namedDependency);
+                        if(implementationType!= null)
+                        {
+                            implementationType = implementationType.MakeGenericType(parameters);
+                        }
+                    }
+                    else
+                    {
+                        implementationType = TrySearchDependency(type.GetGenericTypeDefinition(), namedDependency);
+                        if (implementationType != null)
+                        {
+                            implementationType = implementationType.MakeGenericType(type.GetGenericArguments());
+                        }
+                    }
+                }
+            }
+            return implementationType;
+        }
+        private Type? TrySearchDependency(Type type, object? namedDependency)
+        {
+            Type? implementationType = null;
+            var dependencies = _dependencies.Keys.ToArray();
+            var dependecyType = (from dependency in dependencies
+                                 where type.IsAssignableFrom(dependency)
+                                 select dependency);
+            if (dependecyType != null && dependecyType.Any())
+            {
+                implementationType = _dependencies[dependecyType.First()].GetImplentationFirstType(namedDependency);
             }
             return implementationType;
         }
@@ -84,6 +130,31 @@ namespace DependencyInjectiondDll
         public bool ContainsDependency(Type dependencyType)
         {
             return _dependencies.ContainsKey(dependencyType);
+        }
+        public bool ImplementationIsSingleton(Type dependencyType, Type implementationType)
+        {
+            bool isSingleton = false;
+            if(_dependencies.ContainsKey(dependencyType) && _dependencies[dependencyType].GetAllImplentationTypes().Contains(implementationType))
+            {
+                isSingleton = _dependencies[dependencyType].ImplementationIsSingleton(implementationType);
+            }
+            return isSingleton;
+        }
+        public object? GetImplementationObject(Type dependencyType, Type implementationType)
+        {
+            object? implementationObject = null;
+            if (_dependencies.ContainsKey(dependencyType) && _dependencies[dependencyType].GetAllImplentationTypes().Contains(implementationType))
+            {
+                implementationObject = _dependencies[dependencyType].GetImplementationObject(implementationType);
+            }
+            return implementationObject;
+        }
+        public void SetImplementationObject(Type dependencyType, Type implementationType, object implementationObject)
+        {
+            if (_dependencies.ContainsKey(dependencyType) && _dependencies[dependencyType].GetAllImplentationTypes().Contains(implementationType))
+            {
+                _dependencies[dependencyType].SetImplementationObject(implementationType, implementationObject);
+            }
         }
     }
 }
