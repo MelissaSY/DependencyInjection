@@ -41,6 +41,17 @@ namespace DependencyInjectionTests
         [Test]
         public void Singleton_Test()
         {
+            _dependencies.Register<IRepository, MySqlRepository>(true);
+
+            var dependencyProvider = new DependencyProvider(_dependencies);
+
+            var repositry1 = dependencyProvider.Resolve<IRepository>();
+            var repositry2 = dependencyProvider.Resolve<IRepository>();
+
+
+            Assert.That(repositry1, Is.Not.Null);
+            Assert.That(repositry2, Is.Not.Null);
+            Assert.That(repositry1, Is.EqualTo(repositry2));
 
         }
         [Test]
@@ -99,7 +110,6 @@ namespace DependencyInjectionTests
 
             var service1 = provider.Resolve<IService1>(ServiceImplementations.First) as ServiceImpl1;
             var service2 = provider.Resolve<IService1>(ServiceImplementations.Second) as ServiceImpl2;
-
 
             Assert.That(service1, Is.Not.Null);
             Assert.That(service2, Is.Not.Null);

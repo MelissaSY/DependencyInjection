@@ -32,34 +32,22 @@ namespace DependencyInjectionDll
             {
                 result  = TryFullResolve(type, implementationType);
             }
-            else if(type.IsGenericType)
+            else if(type.IsGenericType &&
+                typeof(IEnumerable<>).IsAssignableFrom(type.GetGenericTypeDefinition()))
             {
-                Type genericDefinition = type.GetGenericTypeDefinition();
-                implementationType = _configuration.GetFirstImplementation(genericDefinition, namedDependency);
-                if (implementationType != null)
+                Type dependecnyType = type.GetGenericArguments()[0];
+                if (_configuration.ContainsDependency(dependecnyType))
                 {
-                    Type[] types = type.GetGenericArguments();
-
-                    var genericImplementation = implementationType.MakeGenericType(types);
-                    object? implementationInner = TryFullResolve(genericDefinition, implementationType, genericImplementation);
-                    result = implementationInner;
-                }
-                if (typeof(IEnumerable<>).IsAssignableFrom(type.GetGenericTypeDefinition()))
-                {
-                    Type dependecnyType = type.GetGenericArguments()[0];
-                    if (_configuration.ContainsDependency(dependecnyType))
+                    var implementations = _configuration.GetAllImplementationTypes(dependecnyType);
+                    var implementationObjects = (object[]?)Activator.CreateInstance(dependecnyType.MakeArrayType(), new object[] { implementations.Count() });
+                    if (implementationObjects != null && implementations != null)
                     {
-                        var implementations = _configuration.GetAllImplementationTypes(dependecnyType);
-                        var implementationObjects = (object[]?)Activator.CreateInstance(dependecnyType.MakeArrayType(), new object[] { implementations.Count() });
-                        if (implementationObjects != null && implementations != null)
+                        for (int i = 0; i < implementations.Count(); i++)
                         {
-                            for (int i = 0; i < implementations.Count(); i++)
-                            {
-                                implementationObjects[i] = TryFullResolve(dependecnyType, implementations.ElementAt(i));
-                            }
+                            implementationObjects[i] = TryFullResolve(dependecnyType, implementations.ElementAt(i));
                         }
-                        result = implementationObjects;
                     }
+                    result = implementationObjects;
                 }
             }
             return result;
@@ -94,35 +82,31 @@ namespace DependencyInjectionDll
             var customAttribute = parameter.GetCustomAttribute(typeof(DependencyKeyAttribute)) as DependencyKeyAttribute;
             if (customAttribute != null && isSuitable)
             {
-
                 isSuitable = _configuration.GetNamedDependency(parameterType, customAttribute.NamedDependency) != null;
             }
 
             return isSuitable;
         }
-        private object? TryFullResolve(Type dependencyType, Type implementationType, Type? genericSample = null)
+        private object? TryFullResolve(Type dependencyType, Type implementationType)
         {
-            object? result = null;
+            object? result;
             bool isSingleton = _configuration.ImplementationIsSingleton(dependencyType, implementationType);
+            object? implementationObject = TryCreateImplementation(implementationType);
             if (isSingleton)
             {
-                result = _configuration.GetImplementationObject(implementationType, implementationType);
-                if (result == null)
+                if(implementationObject!= null)
                 {
-                    result = TryCreateImplementation(implementationType, genericSample);
-                    if (result != null)
-                    {
-                        _configuration.SetImplementationObject(dependencyType, implementationType, result);
-                    }
+                    _configuration.SetImplementationObject(dependencyType, implementationType, implementationObject);
                 }
+                result = _configuration.GetImplementationObject(dependencyType, implementationType);
             }
             else
             {
-                result = TryCreateImplementation(implementationType, genericSample);
+                result = implementationObject;
             }
             return result;
         }
-        private object? TryCreateImplementation(Type implementationType, Type? genericSample = null)
+        private object? TryCreateImplementation(Type implementationType)
         {
             object? result = null;
             List<ConstructorInfo> suitableConstructors = new List<ConstructorInfo>();
@@ -144,34 +128,15 @@ namespace DependencyInjectionDll
             {
                 suitableConstructors.Sort(new DependencyConstructorComparer(suitableConstructors));
                 bool isActivated = false;
-                if (implementationType.IsGenericTypeDefinition)
-                {
-                    if(genericSample != null)
-                    {
-                        implementationType = genericSample;
-                    }
-                    else
-                    {
-                        Type[] arguments = implementationType.GetGenericArguments();
-                        implementationType = implementationType.MakeGenericType(arguments);
-                    }
-                }
                 while (suitableConstructors.Count > 0 && !isActivated)
                 {
-                    if (genericSample == null)
-                    {
-                        isActivated = TryActivate(implementationType, suitableConstructors.First(), out result);
-                    } 
-                    else
-                    {
-                        isActivated = TryActivate(implementationType, suitableConstructors.First(), out result, genericSample.GetGenericArguments());
-                    }
+                    isActivated = TryActivate(implementationType, suitableConstructors.First(), out result);
                     suitableConstructors.Remove(suitableConstructors.First());
                 }
             }
             return result;
         }
-        private bool TryActivate(Type t, ConstructorInfo constructor, out object? activated, Type[]? desiredTypes = null)
+        private bool TryActivate(Type t, ConstructorInfo constructor, out object? activated)
         {
             bool isActivated = false;
             activated = null;
@@ -182,9 +147,8 @@ namespace DependencyInjectionDll
             {
                 try
                 {
-                    Type paramType = TypeResolve(desiredTypes, parameters[i].ParameterType);
                     object? namedDependency = GetDependencyFromAttribute(parameters[i]);
-                    objParameters[i] = Resolve(paramType, namedDependency);
+                    objParameters[i] = Resolve(parameters[i].ParameterType, namedDependency);
                 }
                 catch { }
             }
@@ -195,24 +159,6 @@ namespace DependencyInjectionDll
             }
             catch { }
             return isActivated;
-        }
-        private Type TypeResolve(Type[]? desiredType, Type actualType)
-        {
-            if(desiredType == null)
-            {
-                return actualType;
-            }
-            var desired = from types in desiredType
-                          where actualType.IsAssignableFrom(types)
-                          select types;
-            if (desired != null)
-            {
-                return desired.First();
-            }
-            else
-            {
-                return actualType;
-            }
         }
     }
 }
