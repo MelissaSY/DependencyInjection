@@ -19,15 +19,17 @@ namespace DependencyInjectionDll
         }
         private ImplementationType? GetImplementation(Type implementationType)
         {
-            ImplementationType? implementation = _implementations.Where(type => type.implementationType == implementationType)
-                                                                 .FirstOrDefault();
+            ImplementationType? implementation = null;
+            if (_implementations.Any(type => type.implementationType == implementationType))
+            {
+                implementation = _implementations.First(type => type.implementationType == implementationType);
+            }
             return implementation;
         }
         public void AddImplementationType(Type implementationType, bool isSingleton, object? namedDependency = null)
         {
             ImplementationType implementation = new ImplementationType(implementationType, isSingleton, namedDependency);
-            if(!_implementations.Where(impl => impl.implementationType == implementationType)
-                                .Any())
+            if(!_implementations.Any(impl => impl.implementationType == implementationType))
             {
                 _implementations.Add(implementation);
             }
@@ -35,7 +37,7 @@ namespace DependencyInjectionDll
         public void AddNamedDependency(object namedDependcyNum, Type implementationType, bool isSingleton)
         {
 
-            if (!_implementations.Exists(implementation => namedDependcyNum.Equals(implementation.namedDependency)))
+            if (!_implementations.Any(implementation => namedDependcyNum.Equals(implementation.namedDependency)))
             {
                 ImplementationType implementation = new ImplementationType(implementationType, isSingleton, namedDependcyNum);
                 AddImplementationType(implementationType, isSingleton, namedDependcyNum);
@@ -52,24 +54,28 @@ namespace DependencyInjectionDll
         public object? GetImplementationObject(Type implementationType)
         {
             object? result = null;
-            ImplementationType? implementation = _implementations
-                                                .FirstOrDefault(impl => impl.implementationType == implementationType);
-            if (implementation != null)
+            if (_implementations.Any(impl => impl.implementationType == implementationType))
             {
+                ImplementationType? implementation = _implementations
+                                                    .First(impl => impl.implementationType == implementationType);
                 result = implementation.implementationObject;
             }
             return result;
         }
         public Type? GetImplentationFirstType(object? namedDependency = null)
         {
-            if(namedDependency == null)
+            if(_implementations.Count() > 0)
             {
-                return _implementations.First().implementationType;
+                if (namedDependency == null)
+                {
+                    return _implementations.First().implementationType;
+                }
+                else
+                {
+                    return GetNamedDependencyType(namedDependency);
+                }
             }
-            else
-            {
-                return GetNamedDependencyType(namedDependency);
-            }
+            return null;
         }
         public IEnumerable<Type> GetAllImplentationTypes()
         {
@@ -82,13 +88,11 @@ namespace DependencyInjectionDll
         }
         public Type? GetNamedDependencyType(object namedDependency)
         {
-            var implementation = _implementations
-                                           .Where(impl => namedDependency.Equals(impl.namedDependency))
-                                           .First();
             Type? implementationType = null;
 
-            if(implementation != null)
+            if(_implementations.Any(impl => namedDependency.Equals(impl.namedDependency)))
             {
+                var implementation = _implementations.First(impl => namedDependency.Equals(impl.namedDependency));
                 implementationType = implementation.implementationType;
             }
             return implementationType;
@@ -102,7 +106,7 @@ namespace DependencyInjectionDll
         public void SetImplementationObject(Type implementationType, object implementationObject)
         {
             ImplementationType? implementation = GetImplementation(implementationType);
-            if( implementation == null) return;
+            if(implementation == null) return;
             implementation.implementationObject = implementationObject;
         }
 

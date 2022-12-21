@@ -10,12 +10,9 @@ namespace DependencyInjectionDll
 {
     public class DependenciesConfiguration
     {
-       // private Dictionary<Type, Dependency> _dependencies;
         private List<Dependency> _dependenciesList;
         public DependenciesConfiguration() 
         {
-           // _dependencies = new Dictionary<Type, Dependency>();
-
             _dependenciesList = new List<Dependency>();
         }
         public void Register<T, K>(bool isSingleton = false)
@@ -38,9 +35,7 @@ namespace DependencyInjectionDll
                 {
                     _dependenciesList.Add(new Dependency(dependencyType));
                 }
-                var dependency = (from dependencies in _dependenciesList
-                                 where dependencies.dependencyType == dependencyType
-                                 select dependencies).First();
+                var dependency = _dependenciesList.First(x => x.dependencyType == dependencyType);
                 dependency.AddImplementationType(implementationType, isSingleton);
             }
         }
@@ -53,9 +48,7 @@ namespace DependencyInjectionDll
                 {
                     _dependenciesList.Add(new Dependency(dependencyType));
                 }
-                var dependency = (from dependencies in _dependenciesList
-                                  where dependencies.dependencyType == dependencyType
-                                  select dependencies).First();
+                var dependency = _dependenciesList.First(x => x.dependencyType == dependencyType);
                 dependency.AddNamedDependency(namedDependency, implementationType, isSingleton);
             }
         }
@@ -82,10 +75,7 @@ namespace DependencyInjectionDll
             else
             {
                 var dependencies = _dependenciesList.Select(dependency => dependency.dependencyType);
-                  //  _dependencies.Keys.ToArray();
-                var dependecyType = (from _dependency in dependencies
-                                     where type.IsAssignableFrom(_dependency)
-                                     select _dependency);
+                var dependecyType = dependencies.Where(x => type.IsAssignableFrom(x));
                 if(dependecyType != null && dependecyType.Any())
                 {
                     implementationType = GetDependencyFromType(dependecyType.First())?.GetImplentationFirstType(namedDependency);
@@ -94,6 +84,7 @@ namespace DependencyInjectionDll
                 {
                     if(!type.IsGenericTypeDefinition)
                     {
+                        var prevType = type;
                         var parameters = type.GetGenericArguments();
                         type = type.GetGenericTypeDefinition();
                         implementationType = TrySearchDependency(type, namedDependency);
@@ -101,11 +92,15 @@ namespace DependencyInjectionDll
                         {
                             implementationType = implementationType.MakeGenericType(parameters);
                         }
+                        else
+                        {
+                            implementationType = TrySearchDependency(prevType, namedDependency);
+                        }
                     }
                     else
                     {
-                        implementationType = TrySearchDependency(type.GetGenericTypeDefinition(), namedDependency);
-                        if (implementationType != null)
+                        implementationType = TrySearchDependency(type, namedDependency);
+                        if (implementationType != null && !implementationType.IsGenericTypeDefinition)
                         {
                             implementationType = implementationType.MakeGenericType(type.GetGenericArguments());
                         }
@@ -118,9 +113,7 @@ namespace DependencyInjectionDll
         {
             Type? implementationType = null;
             var dependencies = _dependenciesList.Select(dependency => dependency.dependencyType);
-            var dependecyType = (from dependency in dependencies
-                                 where type.IsAssignableFrom(dependency)
-                                 select dependency);
+            var dependecyType = dependencies.Where(x => type.IsAssignableFrom(x));
             if (dependecyType != null && dependecyType.Any())
             {
                 Dependency? dependency = GetDependencyFromType(dependecyType.First());
@@ -140,8 +133,7 @@ namespace DependencyInjectionDll
         }
         public bool ContainsDependency(Type dependencyType)
         {
-            return _dependenciesList.Any(dependency=>dependency.dependencyType== dependencyType);
-            //return _dependencies.ContainsKey(dependencyType);
+            return _dependenciesList.Any(dependency => dependency.dependencyType == dependencyType);
         }
         public bool ImplementationIsSingleton(Type dependencyType, Type implementationType)
         {
@@ -177,11 +169,9 @@ namespace DependencyInjectionDll
         private Dependency? GetDependencyFromType(Type dependencyType)
         {
             Dependency? dependency = null;
-            var dependencies = _dependenciesList
-                .Where(dependency => dependency.dependencyType == dependencyType);
-            if (dependencies.Any())
+            if (_dependenciesList.Any(dependency => dependency.dependencyType == dependencyType))
             {
-                dependency = dependencies.FirstOrDefault();
+                dependency = _dependenciesList.First(dependency => dependency.dependencyType == dependencyType);
             }
             return dependency;
         }

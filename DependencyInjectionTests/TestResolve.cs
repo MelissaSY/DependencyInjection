@@ -83,7 +83,16 @@ namespace DependencyInjectionTests
 
             var service = provider.Resolve<IService<IRepository>>();
 
+            MySqlRepository? repository = null;
+
+            ServiceImpl<IRepository>? serviceImpl = service as ServiceImpl<IRepository>;
+            if(serviceImpl != null)
+            {
+                repository = serviceImpl.Repository as MySqlRepository;
+            }
+
             Assert.That(service, Is.Not.Null);
+            Assert.That(repository, Is.Not.Null);
         }
         [Test]
         public void OpenGenerics_Form_Test()

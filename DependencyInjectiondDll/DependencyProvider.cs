@@ -39,7 +39,8 @@ namespace DependencyInjectionDll
                 if (_configuration.ContainsDependency(dependecnyType))
                 {
                     var implementations = _configuration.GetAllImplementationTypes(dependecnyType);
-                    var implementationObjects = (object[]?)Activator.CreateInstance(dependecnyType.MakeArrayType(), new object[] { implementations.Count() });
+                    var implementationObjects = (object[]?)Activator.CreateInstance(dependecnyType.MakeArrayType(), 
+                        new object[] { implementations.Count() });
                     if (implementationObjects != null && implementations != null)
                     {
                         for (int i = 0; i < implementations.Count(); i++)
